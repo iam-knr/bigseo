@@ -160,7 +160,7 @@ export async function GET(request: Request) {
   let allowsGptBot: boolean | undefined;
   let allowsClaudeBot: boolean | undefined;
   let allowsPerplexityBot: boolean | undefined;
-  let sitemapUrls: string[] = [];
+  const sitemapUrls: string[] = [];
 
   try {
     const robotsRes = await fetch(robotsUrl);
