@@ -1,13 +1,19 @@
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import Link from "next/link";
 
+async function getApiBaseUrl(): Promise<string> {
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  const host = h.get("host") ?? "localhost:3000";
+  return `${proto}://${host}`;
+}
+
 async function fetchAnalysis(url: string) {
-  const res = await fetch(
-    `http://localhost:3000/api/analyze?url=${encodeURIComponent(url)}`,
-    {
-      cache: "no-store",
-    },
-  );
+  const base = await getApiBaseUrl();
+  const res = await fetch(`${base}/api/analyze?url=${encodeURIComponent(url)}`, {
+    cache: "no-store",
+  });
   if (!res.ok) {
     throw new Error("Failed to analyze URL");
   }
