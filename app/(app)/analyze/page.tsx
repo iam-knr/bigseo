@@ -1,7 +1,16 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { headers } from "next/headers";
 
-function getApiBaseUrl(): string {
+async function getApiBaseUrl(): Promise<string> {
+  try {
+    const h = await headers();
+    const proto = h.get("x-forwarded-proto") ?? "https";
+    const host = h.get("host");
+    if (host) return `${proto}://${host}`;
+  } catch {
+    // ignore
+  }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
@@ -12,7 +21,7 @@ function getApiBaseUrl(): string {
 }
 
 async function fetchAnalysis(url: string) {
-  const base = getApiBaseUrl();
+const base = await getApiBaseUrl();
   const res = await fetch(`${base}/api/analyze?url=${encodeURIComponent(url)}`, {
     cache: "no-store",
   });
