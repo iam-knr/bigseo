@@ -1,20 +1,93 @@
 import { Suspense } from "react";
 
-function AnalyzedView({ url }: { url: string }) {
+async function fetchAnalysis(url: string) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/analyze?url=${encodeURIComponent(
+      url,
+    )}`,
+    {
+      cache: "no-store",
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to analyze URL");
+  }
+
+  return res.json();
+}
+
+function Card({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="rounded-xl bg-slate-900/60 p-6 ring-1 ring-slate-800">
-      <h1 className="text-xl font-semibold">Analysis (coming soon)</h1>
-      <p className="mt-2 text-sm text-slate-300">
-        We will run sitemap, robots.txt, schema, and llms.txt checks for:
-      </p>
-      <p className="mt-3 rounded bg-slate-950 px-3 py-2 text-xs font-mono text-slate-100">
-        {url}
-      </p>
+    <section className="rounded-xl bg-slate-900/60 p-4 ring-1 ring-slate-800">
+      <h2 className="text-sm font-semibold">{title}</h2>
+      <div className="mt-2 text-xs text-slate-200">{children}</div>
+    </section>
+  );
+}
+
+async function AnalyzedView({ url }: { url: string }) {
+  const data = await fetchAnalysis(url);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Card title="Page">
+        <p>Status: {data.page.status}</p>
+        <p>Reachable: {String(data.page.reachable)}</p>
+        {data.page.title && <p>Title: {data.page.title}</p>}
+        {data.page.description && <p>Description: {data.page.description}</p>}
+        {data.page.canonical && <p>Canonical: {data.page.canonical}</p>}
+      </Card>
+
+      <Card title="robots.txt">
+        <p>Found: {String(data.robots.found)}</p>
+        <p>URL: {data.robots.url}</p>
+        <p>Allows Googlebot: {String(data.robots.allowsGooglebot)}</p>
+        <p>Allows GPTBot: {String(data.robots.allowsGptBot)}</p>
+        <p>Allows ClaudeBot: {String(data.robots.allowsClaudeBot)}</p>
+        <p>Allows PerplexityBot: {String(data.robots.allowsPerplexityBot)}</p>
+        {data.robots.sitemapUrls?.length > 0 && (
+          <p>Sitemaps in robots: {data.robots.sitemapUrls.join(", ")}</p>
+        )}
+      </Card>
+
+      <Card title="Sitemap">
+        <p>Found: {String(data.sitemap.found)}</p>
+        {data.sitemap.primarySitemapUrl && (
+          <p>Primary sitemap URL: {data.sitemap.primarySitemapUrl}</p>
+        )}
+        {typeof data.sitemap.urlCount === "number" && (
+          <p>Estimated URL count: {data.sitemap.urlCount}</p>
+        )}
+      </Card>
+
+      <Card title="llms.txt">
+        <p>
+          llms.txt: {String(data.llms.llmsTxtFound)} ({data.llms.llmsTxtUrl})
+        </p>
+        <p>
+          llms-full.txt: {String(data.llms.llmsFullTxtFound)} (
+          {data.llms.llmsFullTxtUrl})
+        </p>
+      </Card>
+
+      <Card title="Schema (JSON-LD)">
+        <p>Present: {String(data.schema.present)}</p>
+        {data.schema.types?.length > 0 && (
+          <p>Types: {data.schema.types.join(", ")}</p>
+        )}
+      </Card>
     </div>
   );
 }
 
-export default function AnalyzePage({
+export default async function AnalyzePage({
   searchParams,
 }: {
   searchParams: { url?: string };
@@ -27,15 +100,16 @@ export default function AnalyzePage({
         <a href="/" className="text-xs text-slate-400 hover:text-slate-200">
            Back
         </a>
-        <Suspense fallback={<p className="text-sm">Loading</p>}>
-          {url ? (
+        {!url ? (
+          <p className="text-sm text-slate-300">
+            No URL provided. Go back and submit a URL to analyze.
+          </p>
+        ) : (
+          <Suspense fallback={<p className="text-sm">Running checks</p>}>
+            {/* @ts-expect-error Async Server Component */}
             <AnalyzedView url={url} />
-          ) : (
-            <p className="text-sm text-slate-300">
-              No URL provided. Go back and submit a URL to analyze.
-            </p>
-          )}
-        </Suspense>
+          </Suspense>
+        )}
       </div>
     </main>
   );
