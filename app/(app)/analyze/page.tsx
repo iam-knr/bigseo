@@ -51,8 +51,12 @@ function Recommendation({
   );
 }
 
-function buildSuggestions(data: any) {
-  const suggestions: { label: string; body: React.ReactNode }[] = [];
+type Suggestion = { label: string; body: React.ReactNode };
+
+type AnalyzeData = Awaited<ReturnType<typeof fetchAnalysis>>;
+
+function buildSuggestions(data: AnalyzeData): Suggestion[] {
+  const suggestions: Suggestion[] = [];
 
   if (!data.sitemap.found) {
     suggestions.push({

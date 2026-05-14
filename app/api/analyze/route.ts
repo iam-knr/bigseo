@@ -7,6 +7,46 @@ const robots = RobotsParser({
   allowOnNeutral: true,
 });
 
+type AnalyzeResponse = {
+  ok: boolean;
+  url: string;
+  normalizedUrl: string;
+  page: {
+    status: number;
+    reachable: boolean;
+    title?: string;
+    description?: string;
+    canonical?: string;
+  };
+  robots: {
+    url: string;
+    found: boolean;
+    allowsGooglebot?: boolean;
+    allowsGptBot?: boolean;
+    allowsClaudeBot?: boolean;
+    allowsPerplexityBot?: boolean;
+    sitemapUrls: string[];
+    raw?: string;
+  };
+  sitemap: {
+    checkedUrls: string[];
+    found: boolean;
+    primarySitemapUrl?: string;
+    urlCount?: number;
+    rawSample?: string;
+  };
+  llms: {
+    llmsTxtUrl: string;
+    llmsTxtFound: boolean;
+    llmsFullTxtUrl: string;
+    llmsFullTxtFound: boolean;
+  };
+  schema: {
+    present: boolean;
+    types: string[];
+  };
+};
+
 function getOrigin(input: string) {
   const url = new URL(input);
   return `${url.protocol}//${url.host}`;
@@ -19,7 +59,7 @@ export async function GET(request: Request) {
   if (!urlParam) {
     return NextResponse.json(
       { error: "Missing ?url parameter" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -52,17 +92,21 @@ export async function GET(request: Request) {
     for (const node of ldNodes) {
       const jsonText = $(node).text();
       try {
-        const data = JSON.parse(jsonText);
-        if (Array.isArray(data)) {
-          data.forEach((item) => {
-            const t = (item as any)["@type"];
-            if (typeof t === "string") types.add(t);
-            if (Array.isArray(t)) t.forEach((v) => types.add(String(v)));
-          });
-        } else if (data) {
-          const t = (data as any)["@type"];
+        const data = JSON.parse(jsonText) as
+          | { [key: string]: unknown }
+          | { [key: string]: unknown }[];
+        const handleTypes = (t: unknown) => {
           if (typeof t === "string") types.add(t);
           if (Array.isArray(t)) t.forEach((v) => types.add(String(v)));
+        };
+        if (Array.isArray(data)) {
+          data.forEach((item) => {
+            const t = (item as { [key: string]: unknown })["@type"];
+            handleTypes(t);
+          });
+        } else if (data) {
+          const t = data["@type"];
+          handleTypes(t);
         }
       } catch {
         // ignore malformed JSON-LD
@@ -86,9 +130,16 @@ export async function GET(request: Request) {
   try {
     await robots.fetch(robotsUrl);
     robotsFound = true;
-    // robots-txt-parser exposes internal structure; types are loose so we cast.
-    const anyRobots = robots as any;
-    robotsRaw = anyRobots.robots?.[robotsUrl]?.robotsTxt;
+
+    const internalRobots = robots as unknown as {
+      robots?: Record<
+        string,
+        {
+          robotsTxt?: string;
+        }
+      >;
+    };
+    robotsRaw = internalRobots.robots?.[robotsUrl]?.robotsTxt;
 
     allowsGooglebot = await robots.canCrawl(target, "Googlebot");
     allowsGptBot = await robots.canCrawl(target, "GPTBot");
@@ -144,7 +195,7 @@ export async function GET(request: Request) {
   const llmsFullTxtFound =
     llmsFullRes.status === "fulfilled" && llmsFullRes.value.ok === true;
 
-  return NextResponse.json({
+  const response: AnalyzeResponse = {
     ok: true,
     url: target,
     normalizedUrl: target,
@@ -182,5 +233,7 @@ export async function GET(request: Request) {
       present: schemaTypes.length > 0,
       types: schemaTypes,
     },
-  });
+  };
+
+  return NextResponse.json(response);
 }

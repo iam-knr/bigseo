@@ -101,7 +101,7 @@ export default function SchemaToolPage() {
           <h1 className="text-2xl font-semibold">Schema (JSON-LD) Generator</h1>
           <p className="mt-2 text-sm text-slate-300">
             Generate JSON-LD structured data for common types and paste it into your page as
-            <code className="ml-1 font-mono">&lt;script type="application/ld+json"&gt;</code>.
+            <code className="ml-1 font-mono">&lt;script type=&quot;application/ld+json&quot;&gt;</code>.
           </p>
         </header>
 
