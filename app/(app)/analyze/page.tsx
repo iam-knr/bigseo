@@ -1,16 +1,18 @@
 import { Suspense } from "react";
-import { headers } from "next/headers";
 import Link from "next/link";
 
-async function getApiBaseUrl(): Promise<string> {
-  const h = await headers();
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  const host = h.get("host") ?? "localhost:3000";
-  return `${proto}://${host}`;
+function getApiBaseUrl(): string {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL;
+  }
+  return "http://localhost:3000";
 }
 
 async function fetchAnalysis(url: string) {
-  const base = await getApiBaseUrl();
+  const base = getApiBaseUrl();
   const res = await fetch(`${base}/api/analyze?url=${encodeURIComponent(url)}`, {
     cache: "no-store",
   });
@@ -104,7 +106,6 @@ async function AnalyzedView({ url }: { url: string }) {
   const suggestions = buildSuggestions(data);
   return (
     <div className="flex flex-col gap-6">
-      {/* Checklist panel */}
       <div className="rounded-xl bg-slate-900/60 p-5 ring-1 ring-slate-800">
         <h2 className="text-sm font-semibold">BIGSEO Assistant Checklist</h2>
         <p className="mt-1 text-xs text-slate-300">
@@ -128,7 +129,6 @@ async function AnalyzedView({ url }: { url: string }) {
         )}
       </div>
 
-      {/* Diagnostic cards */}
       <div className="grid gap-4 sm:grid-cols-2">
         <Card title="Page status">
           <div>HTTP status: <span className={data.page.status >= 200 && data.page.status < 400 ? "text-emerald-400" : "text-rose-400"}>{data.page.status}</span></div>
