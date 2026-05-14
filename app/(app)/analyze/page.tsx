@@ -228,7 +228,6 @@ export default async function AnalyzePage({
           </p>
         ) : (
           <Suspense fallback={<p className="text-sm">Running checks…</p>}>
-            {/* @ts-expect-error Async Server Component */}
             <AnalyzedView url={url} />
           </Suspense>
         )}
