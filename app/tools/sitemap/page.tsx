@@ -329,7 +329,7 @@ export default function SitemapToolPage() {
               </div>
               <div className="p-3 rounded-lg bg-slate-950 ring-1 ring-slate-800">
                 <p className="font-semibold text-slate-100 mb-1">WordPress (Yoast / RankMath)</p>
-                <p>These plugins already generate dynamic sitemaps. Use this file as a reference or supplement only — do not replace the plugin's sitemap to avoid conflicts.</p>
+                <p>These plugins already generate dynamic sitemaps. Use this file as a reference or supplement only — do not replace the plugin&apos;s sitemap to avoid conflicts.</p>
               </div>
               <div className="p-3 rounded-lg bg-slate-950 ring-1 ring-slate-800">
                 <p className="font-semibold text-slate-100 mb-1">React / Next.js / SPA</p>
