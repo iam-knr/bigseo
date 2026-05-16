@@ -1,16 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { headers } from "next/headers";
 
 async function getApiBaseUrl(): Promise<string> {
-  try {
-    const h = await headers();
-    const proto = h.get("x-forwarded-proto") ?? "https";
-    const host = h.get("host");
-    if (host) return `${proto}://${host}`;
-  } catch {
-    // ignore
-  }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
@@ -21,7 +12,7 @@ async function getApiBaseUrl(): Promise<string> {
 }
 
 async function fetchAnalysis(url: string) {
-const base = await getApiBaseUrl();
+  const base = await getApiBaseUrl();
   const res = await fetch(`${base}/api/analyze?url=${encodeURIComponent(url)}`, {
     cache: "no-store",
   });
@@ -68,7 +59,10 @@ function buildSuggestions(data: AnalyzeData): Suggestion[] {
       label: "Create a sitemap",
       body: (
         <>
-          No sitemap.xml was detected. Use our <Link href="/tools/sitemap" className="text-indigo-400 hover:text-indigo-300">Sitemap Generator</Link>{" "}
+          No sitemap.xml was detected. Use our{" "}
+          <Link href="/tools/sitemap" className="text-indigo-400 hover:text-indigo-300">
+            Sitemap Generator
+          </Link>{" "}
           to build one and upload it to your site root.
         </>
       ),
@@ -79,7 +73,10 @@ function buildSuggestions(data: AnalyzeData): Suggestion[] {
       label: "Publish a robots.txt",
       body: (
         <>
-          No robots.txt detected. Use our <Link href="/tools/robots" className="text-indigo-400 hover:text-indigo-300">robots.txt Generator</Link>{" "}
+          No robots.txt detected. Use our{" "}
+          <Link href="/tools/robots" className="text-indigo-400 hover:text-indigo-300">
+            robots.txt Generator
+          </Link>{" "}
           to create one.
         </>
       ),
@@ -90,7 +87,10 @@ function buildSuggestions(data: AnalyzeData): Suggestion[] {
       label: "Add an llms.txt file",
       body: (
         <>
-          No llms.txt found. Use our <Link href="/tools/llms" className="text-indigo-400 hover:text-indigo-300">llms.txt Generator</Link>{" "}
+          No llms.txt found. Use our{" "}
+          <Link href="/tools/llms" className="text-indigo-400 hover:text-indigo-300">
+            llms.txt Generator
+          </Link>{" "}
           to help AI agents discover your content.
         </>
       ),
@@ -101,7 +101,10 @@ function buildSuggestions(data: AnalyzeData): Suggestion[] {
       label: "Add structured data",
       body: (
         <>
-          No JSON-LD schema detected. Use our <Link href="/tools/schema" className="text-indigo-400 hover:text-indigo-300">Schema Generator</Link>{" "}
+          No JSON-LD schema detected. Use our{" "}
+          <Link href="/tools/schema" className="text-indigo-400 hover:text-indigo-300">
+            Schema Generator
+          </Link>{" "}
           to add schema markup.
         </>
       ),
@@ -140,7 +143,18 @@ async function AnalyzedView({ url }: { url: string }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card title="Page status">
-          <div>HTTP status: <span className={data.page.status >= 200 && data.page.status < 400 ? "text-emerald-400" : "text-rose-400"}>{data.page.status}</span></div>
+          <div>
+            HTTP status:{" "}
+            <span
+              className={
+                data.page.status >= 200 && data.page.status < 400
+                  ? "text-emerald-400"
+                  : "text-rose-400"
+              }
+            >
+              {data.page.status}
+            </span>
+          </div>
           <div>Reachable: {data.page.reachable ? "Yes" : "No"}</div>
           {data.page.title && <div>Title: {data.page.title}</div>}
           {data.page.description && <div>Description: {data.page.description}</div>}
@@ -198,9 +212,10 @@ async function AnalyzedView({ url }: { url: string }) {
 export default async function AnalyzePage({
   searchParams,
 }: {
-  searchParams: { url?: string };
+  searchParams: Promise<{ url?: string }>;
 }) {
-  const url = searchParams.url;
+  const params = await searchParams;
+  const url = params.url;
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-16">
